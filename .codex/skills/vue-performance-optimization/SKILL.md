@@ -47,6 +47,11 @@ description: 基于基线、Web Vitals、浏览器 profiling、网络分析、�
 - 本 skill 默认面向 Vue 3 + TypeScript + Vite SPA，不覆盖 Nuxt、SSR、Nitro 和 Vue 2 专项优化。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
 
+## 开发规范
+
+- 直接调用本 skill 时，先读取项目根目录 `docs/开发规范/README.md`（存在时）和项目已有质量工具；不凭个人偏好添加风格规则。
+- 由 `$orchestrator` 调用时，规范检查由 `development-standards` 阶段统一执行，本 skill 只遵循其报告和本任务专属约束。
+
 ## 编排契约
 
 - 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整优化流程。

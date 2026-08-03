@@ -270,3 +270,15 @@ skills:
         section: "2. 更新唯一接口文档"
       - id: verify
         section: "3. 验证接口文档门禁"
+  - id: development-standards
+    path: .codex/skills/development-standards
+    stack: cross-stack
+    work_type: development-standards
+    role: support
+    status: active
+    direct_invocation: true
+    phases:
+      - id: inspect
+        section: "1. 发现规范来源和工具"
+      - id: check
+        section: "2. 检查变更和全量质量"

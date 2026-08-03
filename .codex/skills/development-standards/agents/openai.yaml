@@ -1,0 +1,4 @@
+interface:
+  display_name: "开发规范检查"
+  short_description: "自动发现并执行项目已有质量工具，输出有证据的规范检查报告"
+  default_prompt: "使用 $development-standards 发现并执行项目已有的开发规范检查，输出带证据的检查报告。"

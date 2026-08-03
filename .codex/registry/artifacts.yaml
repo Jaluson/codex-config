@@ -115,3 +115,13 @@ artifacts:
     format: markdown
     required: false
     sensitive: true
+  - id: standards-context
+    filename: standards-context.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: standards-report
+    filename: standards-report.md
+    format: markdown
+    required: false
+    sensitive: true
