@@ -48,3 +48,10 @@ description: 对现有 Java + Maven Spring Boot 代码、提交、分支或 Pull
 - 用户明确要求“审查并修复”时，先保留完整审查结论，再按用户授权实施修复，并转入缺陷修复或功能开发的验证要求。
 - 不因个人偏好要求无收益的重写、依赖升级或架构替换。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整审查流程。
+- 支持阶段：`context`、`risk-review`、`findings`、`verify`、`report`。
+- 读取当前 run 中注册的输入 Artifact，将审查证据和报告写入注册的输出 Artifact；审查阶段保持只读。
+- 阶段失败时保留审查范围、证据和环境阻塞，不用风格偏好替代可验证发现。

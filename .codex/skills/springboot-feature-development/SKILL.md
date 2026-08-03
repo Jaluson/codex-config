@@ -103,3 +103,10 @@ description: 使用现有 Java + Maven Spring Boot 仓库端到端开发新增�
 - 不猜测仓库规范、API 契约、数据库结构或依赖版本；无法从代码和文档确认时说明假设。
 - 不把“代码已写完”当作“功能已验证”；测试未运行或失败必须如实报告。
 - 不为了追求新 JDK 语法而突破项目的最低兼容版本、Spring Boot 版本或运行时约束。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整功能开发流程。
+- 支持阶段：`contract`、`inspect`、`compatibility`、`design`、`implement`、`test`、`verify`。
+- 读取当前 run 中注册的输入 Artifact，将功能契约、设计、变更和验证结果写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 修改阶段遵循用户授权和仓库边界；阶段失败时保留证据并报告阻塞，不把未运行的测试报告为通过。

@@ -49,3 +49,10 @@ description: 诊断、复现、修复和验证现有 Java + Maven Spring Boot �
 - 不为了让测试通过而放宽断言、吞掉异常、跳过校验或关闭安全控制。
 - 不把“暂时不再报错”当作根因已确认；若只能提出假设，按假设交付并列出后续观测要求。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整工作流程。
+- 支持阶段：`evidence`、`reproduce`、`diagnose`、`fix`、`regression-test`、`verify`。
+- 读取当前 run 中注册的输入 Artifact，将阶段证据写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 阶段失败时保留原始证据并报告阻塞，不通过放宽断言、吞异常或跳过校验掩盖失败。

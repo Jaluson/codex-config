@@ -46,3 +46,10 @@ description: 规划、实施和验证 Vue 3 + TypeScript + Vite 单页应用的 
 - 纯业务缺陷使用 `vue-bug-fixing`；行为保持重构使用 `vue-refactoring`；不以升级为理由顺手优化或重写无关代码。
 - 本 skill 默认面向 Vue 3 + TypeScript + Vite SPA，不覆盖 Nuxt、SSR、Nitro 和 Vue 2 专项迁移。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整迁移流程。
+- 支持阶段：`inventory`、`migration-plan`、`compatibility-change`、`verify`。
+- 读取当前 run 中注册的输入 Artifact，将现状盘点、迁移计划、兼容性变更和验证结果写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 每个迁移阶段保留回滚点和兼容性证据；升级失败时停止无依据的连续跳跃并报告阻塞。

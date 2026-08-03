@@ -51,3 +51,10 @@ description: 对现有 Vue 3 + TypeScript + Vite 单页应用的代码、提交�
 - 不因个人偏好要求无收益的重写、依赖升级、全量格式化或组件库替换。
 - Nuxt、SSR、Nitro 和 Vue 2 项目需要单独的审查约束；本 skill 默认面向 Vue 3 + TypeScript + Vite SPA。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整审查流程。
+- 支持阶段：`context`、`risk-review`、`findings`、`verify`、`report`。
+- 读取当前 run 中注册的输入 Artifact，将审查证据和报告写入注册的输出 Artifact；审查阶段保持只读。
+- 阶段失败时保留审查范围、证据和环境阻塞，不用风格偏好替代可验证发现。

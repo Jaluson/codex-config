@@ -45,3 +45,10 @@ description: 在不改变外部行为、组件契约、路由、状态语义、A
 - 如果发现真实缺陷，记录复现证据并按用户授权转入 `vue-bug-fixing`；业务规则变化转入 `vue-feature-development`。
 - 本 skill 默认面向 Vue 3 + TypeScript + Vite SPA，不覆盖 Nuxt、SSR、Nitro 和 Vue 2 迁移。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整重构流程。
+- 支持阶段：`invariants`、`baseline`、`refactor`、`equivalence`、`verify`。
+- 读取当前 run 中注册的输入 Artifact，将不变量、基线、变更和等价验证结果写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 修改前保护行为基线；发现行为变化或基线失败时保留证据并暂停，不静默放宽测试。

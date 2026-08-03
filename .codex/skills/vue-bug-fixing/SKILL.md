@@ -59,3 +59,10 @@ description: 诊断、复现、修复和验证现有 Vue 3 + TypeScript + Vite �
 - 如果只能提出根因假设，按假设交付并列出需要补充的日志、复现条件或观测指标。
 - Nuxt、SSR、Nitro 和 Vue 2 专项迁移不属于本 skill；遇到超出范围的请求先明确边界。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整工作流程。
+- 支持阶段：`evidence`、`reproduce`、`diagnose`、`fix`、`regression-test`、`verify`。
+- 读取当前 run 中注册的输入 Artifact，将阶段证据写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 阶段失败时保留原始证据并报告阻塞，不通过放宽断言、隐藏错误或跳过校验掩盖失败。

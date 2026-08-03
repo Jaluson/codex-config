@@ -49,3 +49,10 @@ description: 为现有 Vue 3 + TypeScript + Vite 单页应用设计、补充或�
 - 测试暴露的性能或版本问题分别转入 `vue-performance-optimization` 或 `vue-upgrade-migration`，不在测试任务中扩大范围。
 - 本 skill 默认面向 Vue 3 + TypeScript + Vite SPA，不覆盖 Nuxt、SSR、Nitro 和 Vue 2 专项测试。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整测试开发流程。
+- 支持阶段：`context`、`test-design`、`implement-tests`、`execute-analyze`。
+- 读取当前 run 中注册的输入 Artifact，将场景设计、测试变更和执行结果写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 测试失败时保留失败堆栈和环境信息，不通过增加无界等待、放宽断言或吞掉异常掩盖问题。

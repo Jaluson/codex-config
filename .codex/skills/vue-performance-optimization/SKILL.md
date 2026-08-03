@@ -46,3 +46,10 @@ description: 基于基线、Web Vitals、浏览器 profiling、网络分析、�
 - 纯结构整理使用 `vue-refactoring`；真实缺陷使用 `vue-bug-fixing`；Vue 生态版本迁移使用 `vue-upgrade-migration`。
 - 本 skill 默认面向 Vue 3 + TypeScript + Vite SPA，不覆盖 Nuxt、SSR、Nitro 和 Vue 2 专项优化。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
+
+## 编排契约
+
+- 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整优化流程。
+- 支持阶段：`baseline`、`bottleneck`、`optimize`、`compare`、`regression`。
+- 读取当前 run 中注册的输入 Artifact，将基线、瓶颈、优化和对比证据写入注册的输出 Artifact；不得使用未声明的路径传递上下文。
+- 没有可重复基线或验证收益时保留事实和阻塞，不用主观判断宣称优化成功。
