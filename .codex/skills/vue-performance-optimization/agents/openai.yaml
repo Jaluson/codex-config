@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue 性能优化"
+  short_description: "基于测量证据优化 Vue 3 前端性能并验证收益结果"
+  default_prompt: "使用 $vue-performance-optimization 分析并优化这个 Vue 3 前端性能问题，先建立基线再验证收益。"

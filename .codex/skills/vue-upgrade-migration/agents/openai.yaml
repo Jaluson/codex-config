@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue 升级迁移"
+  short_description: "规划并实施 Vue 3 生态升级并完成兼容性验证结果"
+  default_prompt: "使用 $vue-upgrade-migration 规划并实施这次 Vue 3 生态升级，完成兼容性验证。"
