@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Boot 缺陷修复"
+  short_description: "定位并修复 Spring Boot 缺陷，补齐回归测试与验证"
+  default_prompt: "使用 $springboot-bug-fixing 定位并修复这个 Spring Boot 问题，补充回归测试并完成验证。"

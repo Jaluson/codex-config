@@ -1,0 +1,102 @@
+schema_version: 1
+artifacts:
+  - id: request-brief
+    filename: request.md
+    format: markdown
+    required: true
+    sensitive: true
+  - id: run-context
+    filename: run-context.md
+    format: markdown
+    required: true
+    sensitive: false
+  - id: repository-context
+    filename: repository-context.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: evidence
+    filename: evidence.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: reproduction
+    filename: reproduction.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: baseline
+    filename: baseline.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: diagnosis
+    filename: diagnosis.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: feature-contract
+    filename: feature-contract.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: compatibility-notes
+    filename: compatibility-notes.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: invariants
+    filename: invariants.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: design-plan
+    filename: plan.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: migration-plan
+    filename: migration-plan.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: bottleneck-analysis
+    filename: bottleneck.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: review-findings
+    filename: review-findings.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: review-report
+    filename: review-report.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: performance-comparison
+    filename: performance-comparison.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: change-summary
+    filename: change-summary.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: test-report
+    filename: test-report.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: validation-report
+    filename: validation-report.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: handoff
+    filename: handoff.md
+    format: markdown
+    required: false
+    sensitive: true

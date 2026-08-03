@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue 测试开发"
+  short_description: "为 Vue 3 前端设计并补充分层自动化测试与回归验证"
+  default_prompt: "使用 $vue-test-development 为这个 Vue 3 前端变更设计并补充分层测试，完成回归验证。"

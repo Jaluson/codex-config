@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue 安全重构"
+  short_description: "安全重构 Vue 3 前端代码并验证行为与兼容性不变"
+  default_prompt: "使用 $vue-refactoring 重构这部分 Vue 3 前端代码，保持行为兼容并完成验证。"

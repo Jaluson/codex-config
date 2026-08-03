@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Boot 测试开发"
+  short_description: "为 Spring Boot 功能设计并补充分层自动化测试与回归验证"
+  default_prompt: "使用 $springboot-test-development 为这个 Spring Boot 变更设计并补充分层测试，完成回归验证。"

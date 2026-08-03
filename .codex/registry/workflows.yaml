@@ -1,0 +1,524 @@
+schema_version: 1
+workflows:
+  - id: bug-fixing
+    display_name: "缺陷修复"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-bug-fixing
+      vue: vue-bug-fixing
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: evidence
+        owner: leaf
+        phase: evidence
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - repository-context
+          - evidence
+      - id: reproduce
+        owner: leaf
+        phase: reproduce
+        required: true
+        on_failure: continue-with-warning
+        consumes:
+          - evidence
+        produces:
+          - reproduction
+      - id: diagnose
+        owner: leaf
+        phase: diagnose
+        required: true
+        on_failure: block
+        consumes:
+          - evidence
+          - reproduction
+        produces:
+          - diagnosis
+      - id: fix
+        owner: leaf
+        phase: fix
+        required: true
+        on_failure: block
+        consumes:
+          - diagnosis
+        produces:
+          - change-summary
+      - id: regression-test
+        owner: leaf
+        phase: regression-test
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - test-report
+      - id: verify
+        owner: leaf
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+          - test-report
+        produces:
+          - validation-report
+      - id: handoff
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - validation-report
+        produces:
+          - handoff
+  - id: feature-development
+    display_name: "功能开发"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-feature-development
+      vue: vue-feature-development
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: contract
+        owner: leaf
+        phase: contract
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - feature-contract
+      - id: inspect
+        owner: leaf
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - feature-contract
+        produces:
+          - repository-context
+      - id: compatibility
+        owner: leaf
+        phase: compatibility
+        required: true
+        on_failure: block
+        consumes:
+          - feature-contract
+          - repository-context
+        produces:
+          - compatibility-notes
+      - id: design
+        owner: leaf
+        phase: design
+        required: true
+        on_failure: block
+        consumes:
+          - feature-contract
+          - compatibility-notes
+        produces:
+          - design-plan
+      - id: implement
+        owner: leaf
+        phase: implement
+        required: true
+        on_failure: block
+        consumes:
+          - design-plan
+        produces:
+          - change-summary
+      - id: test
+        owner: leaf
+        phase: test
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - test-report
+      - id: verify
+        owner: leaf
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+          - test-report
+        produces:
+          - validation-report
+      - id: handoff
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - validation-report
+        produces:
+          - handoff
+  - id: code-review
+    display_name: "代码审查"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-code-review
+      vue: vue-code-review
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: context
+        owner: leaf
+        phase: context
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - repository-context
+      - id: risk-review
+        owner: leaf
+        phase: risk-review
+        required: true
+        on_failure: block
+        consumes:
+          - repository-context
+        produces:
+          - review-findings
+      - id: findings
+        owner: leaf
+        phase: findings
+        required: true
+        on_failure: block
+        consumes:
+          - review-findings
+        produces:
+          - review-report
+      - id: verify
+        owner: leaf
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - review-report
+        produces:
+          - validation-report
+      - id: report
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - validation-report
+        produces:
+          - handoff
+  - id: performance-optimization
+    display_name: "性能优化"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-performance-optimization
+      vue: vue-performance-optimization
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: baseline
+        owner: leaf
+        phase: baseline
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - baseline
+      - id: bottleneck
+        owner: leaf
+        phase: bottleneck
+        required: true
+        on_failure: block
+        consumes:
+          - baseline
+        produces:
+          - bottleneck-analysis
+      - id: optimize
+        owner: leaf
+        phase: optimize
+        required: true
+        on_failure: block
+        consumes:
+          - bottleneck-analysis
+        produces:
+          - change-summary
+      - id: compare
+        owner: leaf
+        phase: compare
+        required: true
+        on_failure: block
+        consumes:
+          - baseline
+          - change-summary
+        produces:
+          - performance-comparison
+      - id: regression
+        owner: leaf
+        phase: regression
+        required: true
+        on_failure: block
+        consumes:
+          - performance-comparison
+          - change-summary
+        produces:
+          - test-report
+      - id: handoff
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - performance-comparison
+          - test-report
+        produces:
+          - handoff
+  - id: refactoring
+    display_name: "安全重构"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-refactoring
+      vue: vue-refactoring
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: invariants
+        owner: leaf
+        phase: invariants
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - invariants
+          - repository-context
+      - id: baseline
+        owner: leaf
+        phase: baseline
+        required: true
+        on_failure: block
+        consumes:
+          - invariants
+          - repository-context
+        produces:
+          - baseline
+      - id: refactor
+        owner: leaf
+        phase: refactor
+        required: true
+        on_failure: block
+        consumes:
+          - invariants
+          - baseline
+        produces:
+          - change-summary
+      - id: equivalence
+        owner: leaf
+        phase: equivalence
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - test-report
+      - id: verify
+        owner: leaf
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - test-report
+        produces:
+          - validation-report
+      - id: handoff
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - validation-report
+        produces:
+          - handoff
+  - id: test-development
+    display_name: "测试开发"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-test-development
+      vue: vue-test-development
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: context
+        owner: leaf
+        phase: context
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - repository-context
+      - id: scenario-design
+        owner: leaf
+        phase: test-design
+        required: true
+        on_failure: block
+        consumes:
+          - repository-context
+        produces:
+          - design-plan
+      - id: implement-tests
+        owner: leaf
+        phase: implement-tests
+        required: true
+        on_failure: block
+        consumes:
+          - design-plan
+        produces:
+          - change-summary
+      - id: execute-analyze
+        owner: leaf
+        phase: execute-analyze
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - test-report
+          - validation-report
+      - id: handoff
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - test-report
+          - validation-report
+        produces:
+          - handoff
+  - id: upgrade-migration
+    display_name: "升级迁移"
+    supported_stacks:
+      - springboot
+      - vue
+    skill_by_stack:
+      springboot: springboot-upgrade-migration
+      vue: vue-upgrade-migration
+    initial_artifacts:
+      - request-brief
+    stages:
+      - id: intake
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - request-brief
+        produces:
+          - run-context
+      - id: inventory
+        owner: leaf
+        phase: inventory
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - repository-context
+          - compatibility-notes
+      - id: migration-plan
+        owner: leaf
+        phase: migration-plan
+        required: true
+        on_failure: block
+        consumes:
+          - repository-context
+          - compatibility-notes
+        produces:
+          - migration-plan
+      - id: compatibility-change
+        owner: leaf
+        phase: compatibility-change
+        required: true
+        on_failure: block
+        consumes:
+          - migration-plan
+        produces:
+          - change-summary
+      - id: verify
+        owner: leaf
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - test-report
+          - validation-report
+      - id: handoff
+        owner: orchestrator
+        required: true
+        on_failure: block
+        consumes:
+          - test-report
+          - validation-report
+        produces:
+          - handoff

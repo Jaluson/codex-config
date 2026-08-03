@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue 代码审查"
+  short_description: "审查 Vue 3 变更并输出可执行的风险与改进建议"
+  default_prompt: "使用 $vue-code-review 审查这组 Vue 3 前端变更，按风险提供证据和可执行建议。"

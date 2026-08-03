@@ -1,0 +1,258 @@
+schema_version: 1
+skills:
+  - id: springboot-bug-fixing
+    path: .codex/skills/springboot-bug-fixing
+    stack: springboot
+    work_type: bug-fixing
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: evidence
+        section: "1. 收集仓库和问题证据"
+      - id: reproduce
+        section: "2. 建立最小复现"
+      - id: diagnose
+        section: "3. 定位根因并设计修复"
+      - id: fix
+        section: "4. 实施并保护兼容性"
+      - id: regression-test
+        section: "4. 实施并保护兼容性"
+      - id: verify
+        section: "5. 分层验证和交付"
+  - id: springboot-code-review
+    path: .codex/skills/springboot-code-review
+    stack: springboot
+    work_type: code-review
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: context
+        section: "1. 建立审查上下文"
+      - id: risk-review
+        section: "2. 按风险检查"
+      - id: findings
+        section: "3. 输出可执行发现"
+      - id: verify
+        section: "4. 验证审查结论"
+      - id: report
+        section: "3. 输出可执行发现"
+  - id: springboot-feature-development
+    path: .codex/skills/springboot-feature-development
+    stack: springboot
+    work_type: feature-development
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: contract
+        section: "1. 明确功能契约"
+      - id: inspect
+        section: "2. 保护并理解仓库"
+      - id: compatibility
+        section: "3. 判定 JDK 与 Spring Boot 兼容范围"
+      - id: design
+        section: "5. 设计变更链路"
+      - id: implement
+        section: "6. 实现功能"
+      - id: test
+        section: "7. 编写分层测试"
+      - id: verify
+        section: "8. 验证并交付"
+  - id: springboot-performance-optimization
+    path: .codex/skills/springboot-performance-optimization
+    stack: springboot
+    work_type: performance-optimization
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: baseline
+        section: "1. 明确目标和基线"
+      - id: bottleneck
+        section: "2. 定位实际瓶颈"
+      - id: optimize
+        section: "3. 实施受控优化"
+      - id: compare
+        section: "4. 验证收益和回归"
+      - id: regression
+        section: "4. 验证收益和回归"
+  - id: springboot-refactoring
+    path: .codex/skills/springboot-refactoring
+    stack: springboot
+    work_type: refactoring
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: invariants
+        section: "1. 明确不变量和范围"
+      - id: baseline
+        section: "2. 建立行为基线"
+      - id: refactor
+        section: "3. 分步实施重构"
+      - id: equivalence
+        section: "4. 验证行为等价"
+      - id: verify
+        section: "4. 验证行为等价"
+  - id: springboot-test-development
+    path: .codex/skills/springboot-test-development
+    stack: springboot
+    work_type: test-development
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: context
+        section: "1. 了解测试和运行环境"
+      - id: test-design
+        section: "2. 选择最小合适的测试层级"
+      - id: implement-tests
+        section: "3. 编写稳定测试"
+      - id: execute-analyze
+        section: "4. 执行和分析"
+  - id: springboot-upgrade-migration
+    path: .codex/skills/springboot-upgrade-migration
+    stack: springboot
+    work_type: upgrade-migration
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: inventory
+        section: "1. 盘点现状和目标"
+      - id: migration-plan
+        section: "2. 依据可靠资料设计迁移"
+      - id: compatibility-change
+        section: "3. 实施兼容性变更"
+      - id: verify
+        section: "4. 分层验证和交付"
+  - id: vue-bug-fixing
+    path: .codex/skills/vue-bug-fixing
+    stack: vue
+    work_type: bug-fixing
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: evidence
+        section: "1. 收集仓库和问题证据"
+      - id: reproduce
+        section: "2. 建立最小复现"
+      - id: diagnose
+        section: "3. 定位根因"
+      - id: fix
+        section: "4. 实施最小修复"
+      - id: regression-test
+        section: "5. 补充回归测试"
+      - id: verify
+        section: "6. 分层验证和交付"
+  - id: vue-code-review
+    path: .codex/skills/vue-code-review
+    stack: vue
+    work_type: code-review
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: context
+        section: "1. 建立审查上下文"
+      - id: risk-review
+        section: "2. 按风险检查"
+      - id: findings
+        section: "3. 输出可执行发现"
+      - id: verify
+        section: "4. 验证审查结论"
+      - id: report
+        section: "3. 输出可执行发现"
+  - id: vue-feature-development
+    path: .codex/skills/vue-feature-development
+    stack: vue
+    work_type: feature-development
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: contract
+        section: "1. 明确功能契约"
+      - id: inspect
+        section: "2. 保护并理解仓库"
+      - id: compatibility
+        section: "2. 保护并理解仓库"
+      - id: design
+        section: "3. 设计数据流和边界"
+      - id: implement
+        section: "4. 实现功能"
+      - id: test
+        section: "5. 编写分层测试"
+      - id: verify
+        section: "6. 验证并交付"
+  - id: vue-performance-optimization
+    path: .codex/skills/vue-performance-optimization
+    stack: vue
+    work_type: performance-optimization
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: baseline
+        section: "1. 明确目标和基线"
+      - id: bottleneck
+        section: "2. 定位实际瓶颈"
+      - id: optimize
+        section: "3. 实施受控优化"
+      - id: compare
+        section: "4. 验证收益和回归"
+      - id: regression
+        section: "4. 验证收益和回归"
+  - id: vue-refactoring
+    path: .codex/skills/vue-refactoring
+    stack: vue
+    work_type: refactoring
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: invariants
+        section: "1. 明确不变量和范围"
+      - id: baseline
+        section: "2. 建立行为基线"
+      - id: refactor
+        section: "3. 分步实施重构"
+      - id: equivalence
+        section: "4. 验证行为等价"
+      - id: verify
+        section: "4. 验证行为等价"
+  - id: vue-test-development
+    path: .codex/skills/vue-test-development
+    stack: vue
+    work_type: test-development
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: context
+        section: "1. 了解测试和运行环境"
+      - id: test-design
+        section: "2. 选择最小合适的测试层级"
+      - id: implement-tests
+        section: "3. 编写稳定测试"
+      - id: execute-analyze
+        section: "4. 执行和分析"
+  - id: vue-upgrade-migration
+    path: .codex/skills/vue-upgrade-migration
+    stack: vue
+    work_type: upgrade-migration
+    role: leaf
+    status: active
+    direct_invocation: true
+    phases:
+      - id: inventory
+        section: "1. 盘点现状和目标"
+      - id: migration-plan
+        section: "2. 依据可靠资料设计迁移"
+      - id: compatibility-change
+        section: "3. 实施兼容性变更"
+      - id: verify
+        section: "4. 分层验证和交付"

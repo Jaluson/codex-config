@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue 缺陷修复"
+  short_description: "定位并修复 Vue 3 前端缺陷，补齐回归测试与验证结果"
+  default_prompt: "使用 $vue-bug-fixing 定位并修复这个 Vue 3 前端问题，补充回归测试并完成验证。"
