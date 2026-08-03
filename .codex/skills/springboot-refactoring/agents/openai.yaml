@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Boot 安全重构"
+  short_description: "安全重构 Spring Boot 代码并验证行为与兼容性不变"
+  default_prompt: "使用 $springboot-refactoring 重构这部分 Spring Boot 代码，保持行为兼容并完成验证。"

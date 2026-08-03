@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Boot 功能开发"
+  short_description: "端到端开发 Spring Boot 功能并完成测试验证"
+  default_prompt: "使用 $springboot-feature-development 端到端开发这个 Spring Boot 功能，遵循仓库约定并完成测试验证。"

@@ -1,0 +1,11 @@
+development:
+  java:
+    version: "25"
+    home: "E:/Engineer/JDKS/jdk25.0.3_9"
+
+  maven:
+    version: "3.9.15"
+    home: "E:/Engineer/Maven/apache-maven-3.9.15"
+
+frontend:
+  package_manager: "pnpm"

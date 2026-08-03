@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Boot 升级迁移"
+  short_description: "规划并实施 JDK 与 Spring Boot 升级迁移并完成兼容性验证"
+  default_prompt: "使用 $springboot-upgrade-migration 规划并实施这次 JDK 或 Spring Boot 升级，完成兼容性验证。"
