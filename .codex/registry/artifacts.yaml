@@ -120,6 +120,11 @@ artifacts:
     format: markdown
     required: false
     sensitive: true
+  - id: standards-fingerprint
+    filename: standards-fingerprint.json
+    format: json
+    required: false
+    sensitive: true
   - id: standards-report
     filename: standards-report.md
     format: markdown

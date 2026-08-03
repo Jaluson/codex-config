@@ -63,7 +63,7 @@
 | 技能 | 用途 |
 | --- | --- |
 | `api-documentation` | 维护 `docs/接口文档/${模块}-${功能}.md` 的唯一最新接口文档和修订记录 |
-| `development-standards` | 发现并执行项目已有格式化、Lint、类型、测试、构建和架构检查 |
+| `development-standards` | 计算动态规范指纹，执行质量检查，并按授权使用受限纠正工具 |
 
 ## 工作流
 
@@ -79,7 +79,7 @@
 | `test-development` | `intake` → `standards-inspect` → `context` → `...` → `implement-tests` → `standards-check` → `execute-analyze` |
 | `upgrade-migration` | `intake` → `standards-inspect` → `inventory` → `...` → `compatibility-change` → `standards-check` → `api-doc-*` → `verify` |
 
-其中 `standards-inspect` 发现项目规范来源和现有质量工具，`standards-check` 执行变更范围及可用的全量检查并产出 `standards-report`；`api-doc-*` 依次表示接口文档识别、更新和验证。
+其中 `standards-inspect` 发现项目规范来源、质量工具并产出 `standards-fingerprint`，`standards-check` 比较当前指纹、执行变更范围及可用的全量检查并产出 `standards-report`；`api-doc-*` 依次表示接口文档识别、更新和验证。
 
 ## 使用方式
 
@@ -92,6 +92,7 @@
 使用 $vue-code-review 审查这组 Vue 3 变更。
 使用 $api-documentation 更新这个接口的唯一文档并记录修订历史。
 使用 $development-standards 发现并执行项目已有的开发规范检查。
+如需纠正，明确说明“检查并纠正本次变更”，技能才会启用受限的 `--fix` 流程。
 ```
 
 ### 使用任务编排器
@@ -127,8 +128,14 @@ python .codex/skills/orchestrator/scripts/registry_tool.py artifact export --run
 # 发现 Spring Boot 项目的规范来源和质量工具
 python -X utf8 .codex/skills/development-standards/scripts/standards_tool.py discover --root . --stack springboot
 
+# 计算当前规范指纹；可追加 --user-rules-file 纳入本次用户规则
+python -X utf8 .codex/skills/development-standards/scripts/standards_tool.py fingerprint --root . --stack vue --format json
+
 # 检查 Vue 项目的变更和全量质量命令
 python -X utf8 .codex/skills/development-standards/scripts/standards_tool.py check --root . --stack vue --changed-from-git --full
+
+# 显式使用已知工具纠正变更文件，再重新检查
+python -X utf8 .codex/skills/development-standards/scripts/standards_tool.py check --root . --stack vue --changed-from-git --fix
 ```
 
 工具支持通过重复传入 `--artifact <artifact-id>` 只导出指定制品。运行 ID 必须是安全的单层目录名，不能通过路径穿越写出 `.codex/artifacts/`。
@@ -148,6 +155,7 @@ python -X utf8 -m unittest discover -s .codex/skills/development-standards/tests
 - 新增或修改的文本文件使用 UTF-8 编码。
 - 新增技能时同步提供 `SKILL.md` 和 `agents/openai.yaml`，并在 Registry 中登记。
 - 开发规范优先复用项目已有工具；新增具体规则时同步更新 `docs/开发规范/README.md` 或项目质量工具配置。
+- 开发规范来源通过当前运行 Artifact 的 SHA-256 指纹判断是否变化；自动纠正必须显式授权，并限定在已知工具和变更文件内。
 - 修改工作流时同步更新技能阶段契约、Artifact 引用和对应测试。
 - 提交前运行 Registry 校验和编排工具单元测试。
 
