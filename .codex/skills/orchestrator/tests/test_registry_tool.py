@@ -34,11 +34,11 @@ class RegistryToolTests(unittest.TestCase):
                 self.assertTrue(resolved["stages"])
                 for stage in resolved["stages"]:
                     if stage["owner"] == "support":
-                        self.assertEqual("api-documentation", stage["skill_id"])
+                        self.assertIn(stage["skill_id"], {"api-documentation", "development-standards"})
 
-    def test_api_documentation_support_stages_are_registered(self) -> None:
+    def test_support_stages_are_registered(self) -> None:
         files = registry_tool._load_registry_files(REPOSITORY_ROOT)
-        expected_workflows = {
+        api_documentation_workflows = {
             "bug-fixing",
             "feature-development",
             "refactoring",
@@ -48,16 +48,44 @@ class RegistryToolTests(unittest.TestCase):
             support_stages = [
                 stage for stage in workflow["stages"] if stage["owner"] == "support"
             ]
-            if workflow["id"] in expected_workflows:
+            standards_stages = [
+                stage for stage in support_stages if stage["skill"] == "development-standards"
+            ]
+            self.assertEqual(
+                ["standards-inspect", "standards-check"],
+                [stage["id"] for stage in standards_stages],
+            )
+            self.assertEqual(
+                {"standards-inspect", "standards-check"},
+                {stage["id"] for stage in standards_stages},
+            )
+            if workflow["id"] in api_documentation_workflows:
+                api_stages = [
+                    stage for stage in support_stages if stage["skill"] == "api-documentation"
+                ]
                 self.assertEqual(
                     ["api-doc-inspect", "api-doc-update", "api-doc-verify"],
-                    [stage["id"] for stage in support_stages],
-                )
-                self.assertTrue(
-                    all(stage["skill"] == "api-documentation" for stage in support_stages)
+                    [stage["id"] for stage in api_stages],
                 )
             else:
-                self.assertEqual([], support_stages)
+                self.assertEqual([], [stage for stage in support_stages if stage["skill"] == "api-documentation"])
+
+    def test_standards_artifacts_are_wired_after_check(self) -> None:
+        files = registry_tool._load_registry_files(REPOSITORY_ROOT)
+        for workflow in files["workflows"]["workflows"]:
+            stages = workflow["stages"]
+            inspect_index = next(index for index, stage in enumerate(stages) if stage["id"] == "standards-inspect")
+            check_index = next(index for index, stage in enumerate(stages) if stage["id"] == "standards-check")
+            self.assertLess(inspect_index, check_index)
+            self.assertIn("standards-context", stages[inspect_index]["produces"])
+            self.assertIn("standards-fingerprint", stages[inspect_index]["produces"])
+            self.assertIn("standards-fingerprint", stages[check_index]["consumes"])
+            self.assertIn("run-context", stages[check_index]["consumes"])
+            self.assertIn("standards-report", stages[check_index]["produces"])
+            self.assertTrue(
+                any("standards-report" in stage["consumes"] for stage in stages[check_index + 1 :]),
+                workflow["id"],
+            )
 
     def test_restricted_yaml_rejects_unsupported_features(self) -> None:
         with self.assertRaises(registry_tool.RegistryError):
@@ -167,7 +195,8 @@ class RegistryToolTests(unittest.TestCase):
         with redirect_stdout(output):
             result = registry_tool.main(["--root", str(REPOSITORY_ROOT), "validate"])
         self.assertEqual(0, result)
-        self.assertIn("15 skills", output.getvalue())
+        self.assertIn("16 skills", output.getvalue())
+        self.assertIn("26 artifacts", output.getvalue())
 
         output = StringIO()
         with redirect_stdout(output):

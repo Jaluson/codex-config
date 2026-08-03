@@ -1,0 +1,4 @@
+interface:
+  display_name: "开发规范检查与纠正"
+  short_description: "动态计算规范指纹，执行质量工具并按授权纠正变更"
+  default_prompt: "使用 $development-standards 发现当前规范、计算指纹并执行带证据的开发规范检查；只有用户明确要求时才纠正变更。"

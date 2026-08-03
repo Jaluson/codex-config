@@ -52,6 +52,11 @@ description: 规划、实施和验证 Vue 3 + TypeScript + Vite 单页应用的 
 - 若升级改变对外 HTTP/Web API 的路径、方法、参数、响应、状态码、错误、鉴权或兼容行为，调用 `$api-documentation` 更新 `docs/接口文档/${模块}-${功能}.md`；只保留一份当前文档，历史变化写入修订记录。
 - 若升级未改变公共接口，在交付结果或当前 run Artifact 中明确记录“无需更新接口文档”。
 
+## 开发规范
+
+- 直接调用本 skill 时，先读取项目根目录 `docs/开发规范/README.md`（存在时）和项目已有质量工具；不凭个人偏好添加风格规则。
+- 由 `$orchestrator` 调用时，规范检查由 `development-standards` 阶段统一执行，本 skill 只遵循其报告和本任务专属约束。
+
 ## 编排契约
 
 - 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整迁移流程。

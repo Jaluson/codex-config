@@ -19,6 +19,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: evidence
         owner: leaf
         phase: evidence
@@ -26,6 +37,7 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - repository-context
           - evidence
@@ -57,6 +69,19 @@ workflows:
           - diagnosis
         produces:
           - change-summary
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - change-summary
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: api-doc-inspect
         owner: support
         skill: api-documentation
@@ -65,6 +90,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - standards-report
         produces:
           - api-documentation-plan
       - id: api-doc-update
@@ -95,6 +121,7 @@ workflows:
         consumes:
           - change-summary
           - api-documentation-report
+          - standards-report
         produces:
           - test-report
       - id: verify
@@ -105,6 +132,7 @@ workflows:
         consumes:
           - change-summary
           - test-report
+          - standards-report
         produces:
           - validation-report
       - id: handoff
@@ -134,6 +162,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: contract
         owner: leaf
         phase: contract
@@ -141,6 +180,7 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - feature-contract
       - id: inspect
@@ -181,6 +221,19 @@ workflows:
           - design-plan
         produces:
           - change-summary
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - change-summary
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: api-doc-inspect
         owner: support
         skill: api-documentation
@@ -189,6 +242,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - standards-report
         produces:
           - api-documentation-plan
       - id: api-doc-update
@@ -219,6 +273,7 @@ workflows:
         consumes:
           - change-summary
           - api-documentation-report
+          - standards-report
         produces:
           - test-report
       - id: verify
@@ -229,6 +284,7 @@ workflows:
         consumes:
           - change-summary
           - test-report
+          - standards-report
         produces:
           - validation-report
       - id: handoff
@@ -258,6 +314,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: context
         owner: leaf
         phase: context
@@ -265,8 +332,22 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - repository-context
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - repository-context
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: risk-review
         owner: leaf
         phase: risk-review
@@ -274,6 +355,7 @@ workflows:
         on_failure: block
         consumes:
           - repository-context
+          - standards-report
         produces:
           - review-findings
       - id: findings
@@ -292,6 +374,7 @@ workflows:
         on_failure: block
         consumes:
           - review-report
+          - standards-report
         produces:
           - validation-report
       - id: report
@@ -321,6 +404,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: baseline
         owner: leaf
         phase: baseline
@@ -328,6 +422,7 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - baseline
       - id: bottleneck
@@ -348,6 +443,19 @@ workflows:
           - bottleneck-analysis
         produces:
           - change-summary
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - change-summary
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: compare
         owner: leaf
         phase: compare
@@ -356,6 +464,7 @@ workflows:
         consumes:
           - baseline
           - change-summary
+          - standards-report
         produces:
           - performance-comparison
       - id: regression
@@ -366,6 +475,7 @@ workflows:
         consumes:
           - performance-comparison
           - change-summary
+          - standards-report
         produces:
           - test-report
       - id: handoff
@@ -375,6 +485,7 @@ workflows:
         consumes:
           - performance-comparison
           - test-report
+          - standards-report
         produces:
           - handoff
   - id: refactoring
@@ -396,6 +507,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: invariants
         owner: leaf
         phase: invariants
@@ -403,6 +525,7 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - invariants
           - repository-context
@@ -426,6 +549,19 @@ workflows:
           - baseline
         produces:
           - change-summary
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - change-summary
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: api-doc-inspect
         owner: support
         skill: api-documentation
@@ -434,6 +570,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - standards-report
         produces:
           - api-documentation-plan
       - id: api-doc-update
@@ -464,6 +601,7 @@ workflows:
         consumes:
           - change-summary
           - api-documentation-report
+          - standards-report
         produces:
           - test-report
       - id: verify
@@ -473,6 +611,7 @@ workflows:
         on_failure: block
         consumes:
           - test-report
+          - standards-report
         produces:
           - validation-report
       - id: handoff
@@ -502,6 +641,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: context
         owner: leaf
         phase: context
@@ -509,6 +659,7 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - repository-context
       - id: scenario-design
@@ -529,6 +680,19 @@ workflows:
           - design-plan
         produces:
           - change-summary
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - change-summary
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: execute-analyze
         owner: leaf
         phase: execute-analyze
@@ -536,6 +700,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - standards-report
         produces:
           - test-report
           - validation-report
@@ -546,6 +711,7 @@ workflows:
         consumes:
           - test-report
           - validation-report
+          - standards-report
         produces:
           - handoff
   - id: upgrade-migration
@@ -567,6 +733,17 @@ workflows:
           - request-brief
         produces:
           - run-context
+      - id: standards-inspect
+        owner: support
+        skill: development-standards
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+        produces:
+          - standards-context
+          - standards-fingerprint
       - id: inventory
         owner: leaf
         phase: inventory
@@ -574,6 +751,7 @@ workflows:
         on_failure: block
         consumes:
           - run-context
+          - standards-context
         produces:
           - repository-context
           - compatibility-notes
@@ -596,6 +774,19 @@ workflows:
           - migration-plan
         produces:
           - change-summary
+      - id: standards-check
+        owner: support
+        skill: development-standards
+        phase: check
+        required: true
+        on_failure: block
+        consumes:
+          - run-context
+          - standards-context
+          - change-summary
+          - standards-fingerprint
+        produces:
+          - standards-report
       - id: api-doc-inspect
         owner: support
         skill: api-documentation
@@ -604,6 +795,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - standards-report
         produces:
           - api-documentation-plan
       - id: api-doc-update
@@ -634,6 +826,7 @@ workflows:
         consumes:
           - change-summary
           - api-documentation-report
+          - standards-report
         produces:
           - test-report
           - validation-report
@@ -644,5 +837,6 @@ workflows:
         consumes:
           - test-report
           - validation-report
+          - standards-report
         produces:
           - handoff
