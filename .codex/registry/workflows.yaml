@@ -57,6 +57,36 @@ workflows:
           - diagnosis
         produces:
           - change-summary
+      - id: api-doc-inspect
+        owner: support
+        skill: api-documentation
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - api-documentation-plan
+      - id: api-doc-update
+        owner: support
+        skill: api-documentation
+        phase: update
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-plan
+        produces:
+          - api-documentation-change
+      - id: api-doc-verify
+        owner: support
+        skill: api-documentation
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-change
+        produces:
+          - api-documentation-report
       - id: regression-test
         owner: leaf
         phase: regression-test
@@ -64,6 +94,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - api-documentation-report
         produces:
           - test-report
       - id: verify
@@ -150,6 +181,36 @@ workflows:
           - design-plan
         produces:
           - change-summary
+      - id: api-doc-inspect
+        owner: support
+        skill: api-documentation
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - api-documentation-plan
+      - id: api-doc-update
+        owner: support
+        skill: api-documentation
+        phase: update
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-plan
+        produces:
+          - api-documentation-change
+      - id: api-doc-verify
+        owner: support
+        skill: api-documentation
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-change
+        produces:
+          - api-documentation-report
       - id: test
         owner: leaf
         phase: test
@@ -157,6 +218,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - api-documentation-report
         produces:
           - test-report
       - id: verify
@@ -364,6 +426,36 @@ workflows:
           - baseline
         produces:
           - change-summary
+      - id: api-doc-inspect
+        owner: support
+        skill: api-documentation
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - api-documentation-plan
+      - id: api-doc-update
+        owner: support
+        skill: api-documentation
+        phase: update
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-plan
+        produces:
+          - api-documentation-change
+      - id: api-doc-verify
+        owner: support
+        skill: api-documentation
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-change
+        produces:
+          - api-documentation-report
       - id: equivalence
         owner: leaf
         phase: equivalence
@@ -371,6 +463,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - api-documentation-report
         produces:
           - test-report
       - id: verify
@@ -503,6 +596,36 @@ workflows:
           - migration-plan
         produces:
           - change-summary
+      - id: api-doc-inspect
+        owner: support
+        skill: api-documentation
+        phase: inspect
+        required: true
+        on_failure: block
+        consumes:
+          - change-summary
+        produces:
+          - api-documentation-plan
+      - id: api-doc-update
+        owner: support
+        skill: api-documentation
+        phase: update
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-plan
+        produces:
+          - api-documentation-change
+      - id: api-doc-verify
+        owner: support
+        skill: api-documentation
+        phase: verify
+        required: true
+        on_failure: block
+        consumes:
+          - api-documentation-change
+        produces:
+          - api-documentation-report
       - id: verify
         owner: leaf
         phase: verify
@@ -510,6 +633,7 @@ workflows:
         on_failure: block
         consumes:
           - change-summary
+          - api-documentation-report
         produces:
           - test-report
           - validation-report

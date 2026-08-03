@@ -100,3 +100,18 @@ artifacts:
     format: markdown
     required: false
     sensitive: true
+  - id: api-documentation-plan
+    filename: api-documentation-plan.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: api-documentation-change
+    filename: api-documentation-change.md
+    format: markdown
+    required: false
+    sensitive: true
+  - id: api-documentation-report
+    filename: api-documentation-report.md
+    format: markdown
+    required: false
+    sensitive: true

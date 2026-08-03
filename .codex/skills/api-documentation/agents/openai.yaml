@@ -1,0 +1,4 @@
+interface:
+  display_name: "接口文档维护"
+  short_description: "维护项目唯一最新的 HTTP 接口文档、示例和修订记录"
+  default_prompt: "使用 $api-documentation 更新这个接口的唯一文档并记录修订历史。"

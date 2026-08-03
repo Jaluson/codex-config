@@ -4,7 +4,7 @@
 
 ## 功能概览
 
-- 14 个叶子技能：Spring Boot 7 个，Vue 7 个。
+- 14 个叶子技能：Spring Boot 7 个，Vue 7 个；另有 1 个跨栈支持技能 `api-documentation`。
 - 7 类标准工程工作流：缺陷修复、功能开发、代码审查、性能优化、安全重构、测试开发和升级迁移。
 - 统一的任务编排器：根据工作类型和技术栈选择叶子技能，按注册顺序执行阶段。
 - Artifact 生命周期管理：隔离请求、证据、变更和验证结果，并在阶段之间显式交接。
@@ -18,6 +18,7 @@
 │   ├── registry/                 # 技能、工作流和 Artifact 注册表
 │   ├── skills/
 │   │   ├── orchestrator/         # 多阶段任务编排器及工具测试
+│   │   ├── api-documentation/    # 对外 HTTP/Web API 文档维护
 │   │   ├── springboot-*/         # Spring Boot 叶子技能
 │   │   └── vue-*/                # Vue 3 叶子技能
 │   └── artifacts/                # 运行时制品目录，仅保留 .gitignore
@@ -54,19 +55,27 @@
 | `vue-test-development` | 设计和补充组件、状态及接口测试 |
 | `vue-upgrade-migration` | Vue、Vite、TypeScript 及相关生态升级 |
 
+### 跨栈支持
+
+| 技能 | 用途 |
+| --- | --- |
+| `api-documentation` | 维护 `docs/接口文档/${模块}-${功能}.md` 的唯一最新接口文档和修订记录 |
+
 ## 工作流
 
-所有工作流同时支持 `springboot` 和 `vue` 技术栈。工作流阶段由 `.codex/registry/workflows.yaml` 定义，叶子技能负责技术栈相关的阶段执行。
+所有工作流同时支持 `springboot` 和 `vue` 技术栈。工作流阶段由 `.codex/registry/workflows.yaml` 定义，叶子技能负责技术栈相关阶段，support 技能负责跨栈门禁。
 
 | 工作流 | 阶段示例 |
 | --- | --- |
-| `bug-fixing` | `intake` → `evidence` → `reproduce` → `diagnose` → `fix` → `regression-test` → `verify` |
-| `feature-development` | `intake` → `contract` → `inspect` → `compatibility` → `design` → `implement` → `test` → `verify` |
+| `bug-fixing` | `intake` → `evidence` → `reproduce` → `diagnose` → `fix` → `api-doc-*` → `regression-test` → `verify` |
+| `feature-development` | `intake` → `contract` → `inspect` → `compatibility` → `design` → `implement` → `api-doc-*` → `test` → `verify` |
 | `code-review` | `intake` → `context` → `risk-review` → `findings` → `verify` → `report` |
 | `performance-optimization` | `intake` → `baseline` → `bottleneck` → `optimize` → `compare` → `regression` |
-| `refactoring` | `intake` → `invariants` → `baseline` → `refactor` → `equivalence` → `verify` |
+| `refactoring` | `intake` → `invariants` → `baseline` → `refactor` → `api-doc-*` → `equivalence` → `verify` |
 | `test-development` | `intake` → `context` → `scenario-design` → `implement-tests` → `execute-analyze` |
-| `upgrade-migration` | `intake` → `inventory` → `migration-plan` → `compatibility-change` → `verify` |
+| `upgrade-migration` | `intake` → `inventory` → `migration-plan` → `compatibility-change` → `api-doc-*` → `verify` |
+
+其中 `api-doc-*` 依次表示接口文档识别、更新和验证；没有公共接口变化时也会产出“无需更新接口文档”的门禁记录。
 
 ## 使用方式
 
@@ -77,6 +86,7 @@
 ```text
 使用 $springboot-bug-fixing 修复这个 Spring Boot 缺陷。
 使用 $vue-code-review 审查这组 Vue 3 变更。
+使用 $api-documentation 更新这个接口的唯一文档并记录修订历史。
 ```
 
 ### 使用任务编排器
@@ -84,7 +94,7 @@
 当任务同时涉及调查、设计、实现、测试、验证或需要阶段交接时，使用 `$orchestrator`。编排器会：
 
 1. 识别工作类型和技术栈。
-2. 从 Registry 解析对应工作流和叶子技能。
+2. 从 Registry 解析对应工作流、叶子技能和 support 技能。
 3. 初始化隔离的 Artifact 运行目录。
 4. 按阶段检查输入和输出制品，保留验证证据。
 5. 在最终交接中报告已执行阶段、验证结果和未完成项。
