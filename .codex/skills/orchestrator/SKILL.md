@@ -7,7 +7,7 @@ description: 面向复杂或跨阶段的软件工程任务，依据 Registry 和
 
 ## 目标
 
-将复杂任务拆成可追踪的阶段，选择合适的技术栈叶子 skill，使用隔离的 Artifact 传递上下文，并在每个阶段结束时保留可验证证据。现有叶子 skill 仍可直接调用；只有跨阶段、跨技能或需要交接记录的任务才使用本 skill。
+将复杂任务拆成可追踪的阶段，选择合适的技术栈叶子 skill 和跨栈 support skill，使用隔离的 Artifact 传递上下文，并在每个阶段结束时保留可验证证据。现有叶子 skill 仍可直接调用；只有跨阶段、跨技能或需要交接记录的任务才使用本 skill。
 
 ## 编排流程
 
@@ -26,8 +26,8 @@ description: 面向复杂或跨阶段的软件工程任务，依据 Registry 和
 
 ### 3. 执行阶段
 
-- 按 Workflow Registry 的顺序执行阶段；每次只把该阶段声明的输入制品交给叶子 skill。
-- 叶子 skill 直接调用时执行自己的完整流程；由本 skill 编排时只执行 Registry 指定的阶段，并把结果写入声明的制品文件。
+- 按 Workflow Registry 的顺序执行阶段；每次只把该阶段声明的输入制品交给对应的叶子或 support skill。
+- 叶子或 support skill 直接调用时执行自己的完整流程；由本 skill 编排时只执行 Registry 指定的阶段，并把结果写入声明的制品文件。
 - 阶段交接至少传递：`run_id`、`workflow_id`、`stack`、`stage_id`、`skill_id`、输入制品路径、输出制品路径和验收条件。
 - 代码审查阶段保持只读；修改阶段遵循用户授权、仓库规则和叶子 skill 的范围边界。
 - 不重复抄录前一阶段的上下文；优先读取已有 Artifact，并在报告中引用路径。
@@ -49,7 +49,8 @@ description: 面向复杂或跨阶段的软件工程任务，依据 Registry 和
 
 ## 注册表和工具约定
 
-- Registry 是编排元数据的权威来源；叶子 `SKILL.md` 的 frontmatter 只负责 Codex 触发，二者的名称和路径必须一致。
+- Registry 是编排元数据的权威来源；叶子和 support `SKILL.md` 的 frontmatter 只负责 Codex 触发，二者的名称和路径必须一致。
+- `owner: leaf` 使用当前技术栈的 `skill_by_stack`；`owner: support` 必须使用阶段显式声明的跨栈 Skill，例如接口文档门禁使用 `api-documentation`，不能把 support Skill 当成技术栈主路由。
 - 注册表使用受限 YAML：支持两格缩进的映射、列表、标量和注释；不使用 Tab、锚点、别名、标签或多文档语法。
 - 使用 `scripts/registry_tool.py validate` 检查技能路径、阶段、制品引用、工作流输入输出和状态约束。
 - 工具只使用 Python 标准库，不调用网络、不修改系统环境变量、不执行 Maven 或 pnpm 命令。

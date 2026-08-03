@@ -32,6 +32,32 @@ class RegistryToolTests(unittest.TestCase):
                 self.assertEqual(workflow["id"], resolved["workflow_id"])
                 self.assertEqual(stack, resolved["stack"])
                 self.assertTrue(resolved["stages"])
+                for stage in resolved["stages"]:
+                    if stage["owner"] == "support":
+                        self.assertEqual("api-documentation", stage["skill_id"])
+
+    def test_api_documentation_support_stages_are_registered(self) -> None:
+        files = registry_tool._load_registry_files(REPOSITORY_ROOT)
+        expected_workflows = {
+            "bug-fixing",
+            "feature-development",
+            "refactoring",
+            "upgrade-migration",
+        }
+        for workflow in files["workflows"]["workflows"]:
+            support_stages = [
+                stage for stage in workflow["stages"] if stage["owner"] == "support"
+            ]
+            if workflow["id"] in expected_workflows:
+                self.assertEqual(
+                    ["api-doc-inspect", "api-doc-update", "api-doc-verify"],
+                    [stage["id"] for stage in support_stages],
+                )
+                self.assertTrue(
+                    all(stage["skill"] == "api-documentation" for stage in support_stages)
+                )
+            else:
+                self.assertEqual([], support_stages)
 
     def test_restricted_yaml_rejects_unsupported_features(self) -> None:
         with self.assertRaises(registry_tool.RegistryError):
@@ -53,6 +79,36 @@ class RegistryToolTests(unittest.TestCase):
             skills_file.write_text(content, encoding="utf-8", newline="\n")
             errors = registry_tool.validate_registry(root)
             self.assertTrue(any("技能目录不存在" in error for error in errors), errors)
+
+    def test_invalid_support_skill_reference_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            shutil.copytree(REPOSITORY_ROOT / ".codex", root / ".codex")
+            workflows_file = root / ".codex" / "registry" / "workflows.yaml"
+            content = workflows_file.read_text(encoding="utf-8")
+            content = content.replace(
+                "skill: api-documentation\n        phase: inspect",
+                "skill: missing-support-skill\n        phase: inspect",
+                1,
+            )
+            workflows_file.write_text(content, encoding="utf-8", newline="\n")
+            errors = registry_tool.validate_registry(root)
+            self.assertTrue(any("未知技能" in error for error in errors), errors)
+
+    def test_invalid_support_phase_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            shutil.copytree(REPOSITORY_ROOT / ".codex", root / ".codex")
+            workflows_file = root / ".codex" / "registry" / "workflows.yaml"
+            content = workflows_file.read_text(encoding="utf-8")
+            content = content.replace(
+                "skill: api-documentation\n        phase: inspect",
+                "skill: api-documentation\n        phase: missing-phase",
+                1,
+            )
+            workflows_file.write_text(content, encoding="utf-8", newline="\n")
+            errors = registry_tool.validate_registry(root)
+            self.assertTrue(any("missing-phase" in error for error in errors), errors)
 
     def test_artifact_lifecycle_and_export(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -111,7 +167,7 @@ class RegistryToolTests(unittest.TestCase):
         with redirect_stdout(output):
             result = registry_tool.main(["--root", str(REPOSITORY_ROOT), "validate"])
         self.assertEqual(0, result)
-        self.assertIn("14 skills", output.getvalue())
+        self.assertIn("15 skills", output.getvalue())
 
         output = StringIO()
         with redirect_stdout(output):

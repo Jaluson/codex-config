@@ -21,6 +21,8 @@ RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 ALLOWED_STAGE_STATUS = {"pending", "running", "succeeded", "failed", "blocked", "skipped"}
 ALLOWED_RUN_STATUS = {"created", "running", "succeeded", "failed", "blocked"}
 ALLOWED_FAILURE_POLICIES = {"block", "continue-with-warning"}
+ALLOWED_SKILL_ROLES = {"leaf", "support"}
+ALLOWED_STAGE_OWNERS = {"orchestrator", "leaf", "support"}
 
 
 class RegistryError(Exception):
@@ -431,11 +433,16 @@ def validate_registry(root: Path) -> List[str]:
                 errors.append(str(exc))
         stack = _required_string(record, "stack", location, errors)
         work_type = _required_string(record, "work_type", location, errors)
+        role = _required_string(record, "role", location, errors)
         if stack and work_type and skill_id:
             if not ID_PATTERN.fullmatch(stack):
                 errors.append(f"{location}.stack 使用了非法 ID：{stack}")
             if not ID_PATTERN.fullmatch(work_type):
                 errors.append(f"{location}.work_type 使用了非法 ID：{work_type}")
+        if role not in ALLOWED_SKILL_ROLES:
+            errors.append(f"{location}.role 必须是 leaf 或 support")
+        elif role == "support" and stack != "cross-stack":
+            errors.append(f"{location}.role 为 support 时 stack 必须是 cross-stack")
         phases = _as_list(record.get("phases"), f"{location}.phases", errors)
         phase_ids = set()
         for phase_index, raw_phase in enumerate(phases):
@@ -541,8 +548,8 @@ def validate_registry(root: Path) -> List[str]:
                     errors.append(f"{stage_location} 重复阶段 ID：{stage_id}")
                 stage_ids.add(stage_id)
             owner = _required_string(stage, "owner", stage_location, errors)
-            if owner not in {"orchestrator", "leaf"}:
-                errors.append(f"{stage_location}.owner 必须是 orchestrator 或 leaf")
+            if owner not in ALLOWED_STAGE_OWNERS:
+                errors.append(f"{stage_location}.owner 必须是 orchestrator、leaf 或 support")
             if not isinstance(stage.get("required"), bool):
                 errors.append(f"{stage_location}.required 必须是布尔值")
             failure_policy = _required_string(stage, "on_failure", stage_location, errors)
@@ -559,6 +566,8 @@ def validate_registry(root: Path) -> List[str]:
                     )
             if owner == "leaf":
                 phase = _required_string(stage, "phase", stage_location, errors)
+                if "skill" in stage:
+                    errors.append(f"{stage_location} 的 leaf 阶段不应声明 skill")
                 for stack in supported_stack_set:
                     skill_id = skill_by_stack.get(stack)
                     skill = skill_index.get(skill_id, {})
@@ -567,8 +576,27 @@ def validate_registry(root: Path) -> List[str]:
                         errors.append(
                             f"{stage_location}.phase 在 {skill_id} 中不存在：{phase}"
                         )
-            elif "phase" in stage:
-                errors.append(f"{stage_location} 的 orchestrator 阶段不应声明 phase")
+            elif owner == "support":
+                support_skill_id = _required_string(stage, "skill", stage_location, errors)
+                phase = _required_string(stage, "phase", stage_location, errors)
+                support_skill = skill_index.get(support_skill_id, {})
+                if support_skill_id and not support_skill:
+                    errors.append(
+                        f"{stage_location}.skill 引用了未知技能：{support_skill_id}"
+                    )
+                elif support_skill.get("role") != "support":
+                    errors.append(
+                        f"{stage_location}.skill 必须引用 role=support 的技能：{support_skill_id}"
+                    )
+                if phase and phase not in support_skill.get("_phase_ids", set()):
+                    errors.append(
+                        f"{stage_location}.phase 在 {support_skill_id} 中不存在：{phase}"
+                    )
+            else:
+                if "phase" in stage:
+                    errors.append(f"{stage_location} 的 orchestrator 阶段不应声明 phase")
+                if "skill" in stage:
+                    errors.append(f"{stage_location} 的 orchestrator 阶段不应声明 skill")
             for artifact_id in produces:
                 if not isinstance(artifact_id, str) or artifact_id not in artifact_index:
                     errors.append(f"{stage_location}.produces 引用了未知制品：{artifact_id}")
@@ -599,11 +627,17 @@ def resolve_workflow(root: Path, workflow_id: str, stack: str) -> Dict[str, Any]
     skill_id = workflow["skill_by_stack"][stack]
     stages: List[Dict[str, Any]] = []
     for stage in workflow["stages"]:
+        if stage["owner"] == "leaf":
+            stage_skill_id = skill_id
+        elif stage["owner"] == "support":
+            stage_skill_id = stage["skill"]
+        else:
+            stage_skill_id = None
         resolved_stage = {
             "id": stage["id"],
             "owner": stage["owner"],
             "phase": stage.get("phase"),
-            "skill_id": skill_id if stage["owner"] == "leaf" else None,
+            "skill_id": stage_skill_id,
             "required": stage["required"],
             "on_failure": stage["on_failure"],
             "consumes": list(stage["consumes"]),

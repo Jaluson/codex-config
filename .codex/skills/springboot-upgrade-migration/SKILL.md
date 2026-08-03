@@ -45,6 +45,11 @@ description: 规划、实施和验证 Java + Maven Spring Boot 项目的 JDK、S
 - 纯业务缺陷使用 springboot-bug-fixing；不以升级为理由顺手重构或优化无关代码。
 - 所有新增或修改文本使用 UTF-8；不执行无关的破坏性命令。
 
+## 接口文档门禁
+
+- 若升级改变对外 HTTP/Web API 的路径、方法、参数、响应、状态码、错误、鉴权或兼容行为，调用 `$api-documentation` 更新 `docs/接口文档/${模块}-${功能}.md`；只保留一份当前文档，历史变化写入修订记录。
+- 若升级未改变公共接口，在交付结果或当前 run Artifact 中明确记录“无需更新接口文档”。
+
 ## 编排契约
 
 - 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整迁移流程。

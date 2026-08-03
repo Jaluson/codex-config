@@ -71,6 +71,11 @@ description: 使用现有 Vue 3 + TypeScript + Vite 单页应用端到端开发�
 - Vue、Vite、TypeScript 或相关库的 API 不确定时，使用 Context7（如果可用）或对应官方文档确认，并以仓库实际版本为准。
 - 所有新增或修改文本使用 UTF-8；中文说明保持简洁，代码标识符和生态命令保留惯用写法。
 
+## 接口文档门禁
+
+- 若功能新增或修改对外 HTTP/Web API，调用 `$api-documentation` 更新 `docs/接口文档/${模块}-${功能}.md`；只保留一份当前文档，历史变化写入文档修订记录。
+- 若功能不涉及公共接口，在交付结果或当前 run Artifact 中明确记录“无需更新接口文档”。
+
 ## 编排契约
 
 - 由 `$orchestrator` 调用时，按 Workflow Registry 指定的阶段执行，不重复执行其他阶段；直接调用本 skill 时仍执行完整功能开发流程。

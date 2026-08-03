@@ -256,3 +256,17 @@ skills:
         section: "3. 实施兼容性变更"
       - id: verify
         section: "4. 分层验证和交付"
+  - id: api-documentation
+    path: .codex/skills/api-documentation
+    stack: cross-stack
+    work_type: api-documentation
+    role: support
+    status: active
+    direct_invocation: true
+    phases:
+      - id: inspect
+        section: "1. 识别接口变更和文档"
+      - id: update
+        section: "2. 更新唯一接口文档"
+      - id: verify
+        section: "3. 验证接口文档门禁"
