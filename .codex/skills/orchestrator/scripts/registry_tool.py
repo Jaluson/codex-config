@@ -23,6 +23,7 @@ ALLOWED_RUN_STATUS = {"created", "running", "succeeded", "failed", "blocked"}
 ALLOWED_FAILURE_POLICIES = {"block", "continue-with-warning"}
 ALLOWED_SKILL_ROLES = {"leaf", "support"}
 ALLOWED_STAGE_OWNERS = {"orchestrator", "leaf", "support"}
+ALLOWED_ARTIFACT_FORMATS = {"markdown", "json"}
 
 
 class RegistryError(Exception):
@@ -477,8 +478,10 @@ def validate_registry(root: Path) -> List[str]:
             except RegistryError as exc:
                 errors.append(str(exc))
         format_name = _required_string(record, "format", location, errors)
-        if format_name != "markdown":
-            errors.append(f"{location}.format 当前只支持 markdown")
+        if format_name not in ALLOWED_ARTIFACT_FORMATS:
+            errors.append(
+                f"{location}.format 只支持：{', '.join(sorted(ALLOWED_ARTIFACT_FORMATS))}"
+            )
         for boolean_key in ("required", "sensitive"):
             if not isinstance(record.get(boolean_key), bool):
                 errors.append(f"{location}.{boolean_key} 必须是布尔值")

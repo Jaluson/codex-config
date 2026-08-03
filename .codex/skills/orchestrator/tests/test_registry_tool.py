@@ -78,6 +78,9 @@ class RegistryToolTests(unittest.TestCase):
             check_index = next(index for index, stage in enumerate(stages) if stage["id"] == "standards-check")
             self.assertLess(inspect_index, check_index)
             self.assertIn("standards-context", stages[inspect_index]["produces"])
+            self.assertIn("standards-fingerprint", stages[inspect_index]["produces"])
+            self.assertIn("standards-fingerprint", stages[check_index]["consumes"])
+            self.assertIn("run-context", stages[check_index]["consumes"])
             self.assertIn("standards-report", stages[check_index]["produces"])
             self.assertTrue(
                 any("standards-report" in stage["consumes"] for stage in stages[check_index + 1 :]),
@@ -193,7 +196,7 @@ class RegistryToolTests(unittest.TestCase):
             result = registry_tool.main(["--root", str(REPOSITORY_ROOT), "validate"])
         self.assertEqual(0, result)
         self.assertIn("16 skills", output.getvalue())
-        self.assertIn("25 artifacts", output.getvalue())
+        self.assertIn("26 artifacts", output.getvalue())
 
         output = StringIO()
         with redirect_stdout(output):

@@ -115,6 +115,90 @@ class StandardsToolTests(unittest.TestCase):
                 result,
             )
 
+    def test_fingerprint_normalizes_line_endings(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            agents = root / "AGENTS.md"
+            agents.write_text("# 规则\n\n- 使用 UTF-8\n", encoding="utf-8")
+
+            first = standards_tool.discover(root, "vue")
+            agents.write_bytes("# 规则\r\n\r\n- 使用 UTF-8\r\n".encode("utf-8"))
+            second = standards_tool.discover(root, "vue")
+
+            self.assertEqual(first["fingerprint"]["value"], second["fingerprint"]["value"])
+
+    def test_user_rules_change_is_reported_against_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            (root / "AGENTS.md").write_text("# 规则\n", encoding="utf-8")
+            rules = root / "user-rules.md"
+            rules.write_text("本次要求使用 4 个空格。\n", encoding="utf-8")
+            baseline = standards_tool.discover(root, "vue", user_rules_file=rules)["fingerprint"]
+            baseline_path = root / "standards-fingerprint.json"
+            baseline_path.write_text(json.dumps(baseline, ensure_ascii=False), encoding="utf-8")
+
+            incompatible = dict(baseline)
+            incompatible["stack"] = "springboot"
+            baseline_path.write_text(json.dumps(incompatible, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaises(standards_tool.ToolError):
+                standards_tool.check(
+                    root,
+                    "vue",
+                    changed_files=["AGENTS.md"],
+                    user_rules_file=rules,
+                    baseline_fingerprint=baseline_path,
+                )
+            baseline_path.write_text(json.dumps(baseline, ensure_ascii=False), encoding="utf-8")
+
+            rules.write_text("本次要求使用 2 个空格。\n", encoding="utf-8")
+            result = standards_tool.check(
+                root,
+                "vue",
+                changed_files=["AGENTS.md"],
+                user_rules_file=rules,
+                baseline_fingerprint=baseline_path,
+            )
+
+            self.assertTrue(result["fingerprint_comparison"]["changed"])
+            self.assertIn("<user-rules>", [item["path"] for item in result["fingerprint_comparison"]["changed_inputs"]])
+            self.assertTrue(any(item["id"] == "standards-fingerprint" for item in result["checks"]))
+
+    def test_discover_exposes_only_known_file_scoped_fixers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            (root / ".dev-env.yaml").write_text(
+                'frontend:\n  package_manager: "pnpm"\n', encoding="utf-8"
+            )
+            (root / "eslint.config.js").write_text("export default [];\n", encoding="utf-8")
+            (root / "prettier.config.js").write_text("export default {};\n", encoding="utf-8")
+            (root / "package.json").write_text(
+                json.dumps(
+                    {
+                        "scripts": {
+                            "lint:fix": "eslint --fix .",
+                            "format:write": "prettier --write .",
+                        },
+                        "devDependencies": {"eslint": "1.0.0", "prettier": "1.0.0"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = standards_tool.discover(root, "vue")
+            fixer_ids = {item["id"] for item in result["fixers"]}
+            self.assertEqual({"eslint-fix", "prettier-fix"}, fixer_ids)
+            self.assertTrue(all(item["scope"] == "changed-files" for item in result["fixers"]))
+            fix_commands = standards_tool._fix_commands(result["fixers"], ["src/App.vue", "README.md", "src/App.java"])
+            self.assertEqual({"eslint-fix", "prettier-fix"}, {item["id"] for item in fix_commands})
+            self.assertTrue(all(item["argv"][-1] in {"src/App.vue", "README.md"} for item in fix_commands))
+
+    def test_fix_without_changed_files_is_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            result = standards_tool.check(Path(temporary_directory), "vue", fix=True)
+
+            self.assertEqual("blocked", result["status"])
+            self.assertTrue(any(item["id"] == "fix-scope" and item["status"] == "blocked" for item in result["fixes"]))
+
 
 if __name__ == "__main__":
     unittest.main()

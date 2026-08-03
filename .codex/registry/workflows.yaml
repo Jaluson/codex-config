@@ -29,6 +29,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: evidence
         owner: leaf
         phase: evidence
@@ -75,8 +76,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - change-summary
+          - standards-fingerprint
         produces:
           - standards-report
       - id: api-doc-inspect
@@ -169,6 +172,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: contract
         owner: leaf
         phase: contract
@@ -224,8 +228,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - change-summary
+          - standards-fingerprint
         produces:
           - standards-report
       - id: api-doc-inspect
@@ -318,6 +324,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: context
         owner: leaf
         phase: context
@@ -335,8 +342,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - repository-context
+          - standards-fingerprint
         produces:
           - standards-report
       - id: risk-review
@@ -405,6 +414,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: baseline
         owner: leaf
         phase: baseline
@@ -440,8 +450,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - change-summary
+          - standards-fingerprint
         produces:
           - standards-report
       - id: compare
@@ -505,6 +517,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: invariants
         owner: leaf
         phase: invariants
@@ -543,8 +556,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - change-summary
+          - standards-fingerprint
         produces:
           - standards-report
       - id: api-doc-inspect
@@ -636,6 +651,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: context
         owner: leaf
         phase: context
@@ -671,8 +687,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - change-summary
+          - standards-fingerprint
         produces:
           - standards-report
       - id: execute-analyze
@@ -725,6 +743,7 @@ workflows:
           - run-context
         produces:
           - standards-context
+          - standards-fingerprint
       - id: inventory
         owner: leaf
         phase: inventory
@@ -762,8 +781,10 @@ workflows:
         required: true
         on_failure: block
         consumes:
+          - run-context
           - standards-context
           - change-summary
+          - standards-fingerprint
         produces:
           - standards-report
       - id: api-doc-inspect

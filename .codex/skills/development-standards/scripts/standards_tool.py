@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -15,7 +16,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+FINGERPRINT_VERSION = 1
 DEFAULT_TIMEOUT_SECONDS = 600
 SUPPORTED_STACKS = {"springboot", "vue"}
 MAVEN_PLUGIN_COMMANDS = {
@@ -35,6 +37,31 @@ SKIP_SCRIPT_TOKENS = {"watch", "dev", "start", "serve", "fix"}
 SENSITIVE_OUTPUT_PATTERN = re.compile(
     r"(?i)(password|passwd|secret|token|authorization|api[_-]?key)(\s*[:=]\s*)[^\s,;]+"
 )
+SOURCE_EXCLUDED_PARTS = {
+    ".git",
+    "artifacts",
+    "node_modules",
+    "target",
+    "dist",
+    "build",
+    "__pycache__",
+}
+PRETTIER_EXTENSIONS = {
+    ".css",
+    ".html",
+    ".js",
+    ".jsx",
+    ".json",
+    ".md",
+    ".mjs",
+    ".scss",
+    ".ts",
+    ".tsx",
+    ".vue",
+    ".yaml",
+    ".yml",
+}
+ESLINT_EXTENSIONS = {".cjs", ".js", ".jsx", ".mjs", ".ts", ".tsx", ".vue"}
 
 
 class ToolError(Exception):
@@ -108,6 +135,176 @@ def _source(path: Path, root: Path, kind: str, authoritative: bool = True) -> Di
         "path": _relative_display(path, root),
         "kind": kind,
         "authoritative": authoritative,
+    }
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _normalize_text_for_hash(text: str) -> bytes:
+    return text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+
+
+def _read_text_for_hash(path: Path, description: str) -> Tuple[str, bytes]:
+    try:
+        text = path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ToolError(f"无法按 UTF-8 读取{description}：{path}: {exc}") from exc
+    except OSError as exc:
+        raise ToolError(f"无法读取{description}：{path}: {exc}") from exc
+    normalized = _normalize_text_for_hash(text)
+    return text, normalized
+
+
+def _content_hash_record(path: Path, relative_path: str, kind: str, authoritative: bool) -> Dict[str, Any]:
+    _, normalized = _read_text_for_hash(path, "规范来源")
+    return {
+        "path": relative_path,
+        "kind": kind,
+        "authoritative": authoritative,
+        "sha256": _sha256_bytes(normalized),
+        "bytes": len(normalized),
+    }
+
+
+def _user_rules_record(user_rules_file: Optional[Path]) -> Optional[Dict[str, Any]]:
+    if user_rules_file is None:
+        return None
+    path = user_rules_file.expanduser().resolve()
+    _, normalized = _read_text_for_hash(path, "用户规则文件")
+    return {
+        "name": "当前任务用户规则",
+        "sha256": _sha256_bytes(normalized),
+        "bytes": len(normalized),
+    }
+
+
+def _command_manifest(commands: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": command.get("id"),
+            "kind": command.get("kind"),
+            "argv": list(command.get("argv", [])),
+            "scope": command.get("scope"),
+            "source": command.get("source"),
+        }
+        for command in sorted(commands, key=lambda item: str(item.get("id", "")))
+    ]
+
+
+def _compute_fingerprint(
+    root: Path,
+    stack: str,
+    sources: Sequence[Dict[str, Any]],
+    commands: Sequence[Dict[str, Any]],
+    user_rules_file: Optional[Path],
+) -> Dict[str, Any]:
+    inputs = [
+        _content_hash_record(
+            root / source["path"],
+            source["path"],
+            source["kind"],
+            bool(source.get("authoritative", True)),
+        )
+        for source in sorted(sources, key=lambda item: item["path"])
+    ]
+    user_rules = _user_rules_record(user_rules_file)
+    payload = {
+        "fingerprint_version": FINGERPRINT_VERSION,
+        "schema_version": SCHEMA_VERSION,
+        "stack": stack,
+        "inputs": inputs,
+        "user_rules": user_rules,
+        "commands": _command_manifest(commands),
+    }
+    value = _sha256_bytes(_canonical_json(payload).encode("utf-8"))
+    return {
+        "algorithm": "sha256",
+        "fingerprint_version": FINGERPRINT_VERSION,
+        "stack": stack,
+        "value": value,
+        "inputs": inputs,
+        "user_rules": user_rules,
+        "commands": payload["commands"],
+    }
+
+
+def _load_fingerprint(path: Path) -> Dict[str, Any]:
+    try:
+        with path.open("r", encoding="utf-8-sig") as handle:
+            value = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ToolError(f"无法读取规范指纹：{path}: {exc}") from exc
+    if isinstance(value, dict) and isinstance(value.get("fingerprint"), dict):
+        value = value["fingerprint"]
+    if not isinstance(value, dict) or not isinstance(value.get("value"), str):
+        raise ToolError(f"规范指纹格式无效：{path}")
+    return value
+
+
+def _fingerprint_input_map(fingerprint: Dict[str, Any]) -> Dict[str, str]:
+    inputs = fingerprint.get("inputs", [])
+    if not isinstance(inputs, list):
+        raise ToolError("规范指纹的 inputs 必须是列表")
+    result: Dict[str, str] = {}
+    for item in inputs:
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str) or not isinstance(item.get("sha256"), str):
+            raise ToolError("规范指纹的 inputs 包含无效项")
+        result[item["path"]] = item["sha256"]
+    return result
+
+
+def _compare_fingerprints(
+    baseline: Optional[Dict[str, Any]], current: Dict[str, Any]
+) -> Dict[str, Any]:
+    if baseline is None:
+        return {
+            "available": False,
+            "changed": False,
+            "baseline": None,
+            "current": current["value"],
+            "changed_inputs": [],
+        }
+    for key in ("algorithm", "fingerprint_version", "stack"):
+        if baseline.get(key) != current.get(key):
+            raise ToolError(f"规范指纹基线与当前检查不兼容：{key}")
+    baseline_inputs = _fingerprint_input_map(baseline)
+    current_inputs = _fingerprint_input_map(current)
+    changed_inputs: List[Dict[str, Any]] = []
+    for path in sorted(set(baseline_inputs) | set(current_inputs)):
+        before = baseline_inputs.get(path)
+        after = current_inputs.get(path)
+        if before == after:
+            continue
+        changed_inputs.append({
+            "path": path,
+            "change": "added" if before is None else "removed" if after is None else "modified",
+        })
+    baseline_user_rules_record = baseline.get("user_rules")
+    baseline_user_rules = (
+        baseline_user_rules_record.get("sha256")
+        if isinstance(baseline_user_rules_record, dict)
+        else None
+    )
+    current_user_rules = current.get("user_rules", {}).get("sha256") if isinstance(current.get("user_rules"), dict) else None
+    if baseline_user_rules != current_user_rules:
+        changed_inputs.append({"path": "<user-rules>", "change": "modified"})
+    commands_changed = baseline.get("commands") != current.get("commands")
+    if commands_changed:
+        changed_inputs.append({"path": "<discovered-commands>", "change": "modified"})
+    changed = baseline.get("value") != current.get("value")
+    return {
+        "available": True,
+        "changed": changed,
+        "baseline": baseline.get("value"),
+        "current": current["value"],
+        "changed_inputs": changed_inputs,
+        "commands_changed": commands_changed,
     }
 
 
@@ -193,30 +390,66 @@ def _resolve_pnpm(dev_env: Dict[str, Any]) -> Tuple[Optional[str], List[str]]:
 
 def _detect_sources(root: Path) -> List[Dict[str, Any]]:
     sources: List[Dict[str, Any]] = []
-    agents = root / "AGENTS.md"
-    dev_env = root / ".dev-env.yaml"
-    standards = root / "docs" / "开发规范" / "README.md"
-    if agents.is_file():
-        sources.append(_source(agents, root, "AGENTS.md"))
-    if dev_env.is_file():
-        sources.append(_source(dev_env, root, ".dev-env.yaml"))
-    if standards.is_file():
-        sources.append(_source(standards, root, "项目开发规范"))
-    for name in (".editorconfig", "pom.xml", "package.json", "pnpm-workspace.yaml"):
-        path = root / name
-        if path.is_file():
-            sources.append(_source(path, root, "项目配置"))
+    seen: Set[str] = set()
+
+    def add(path: Path, kind: str, authoritative: bool = True) -> None:
+        if not path.is_file():
+            return
+        relative_path = _relative_display(path, root)
+        if relative_path in seen:
+            return
+        seen.add(relative_path)
+        sources.append(_source(path, root, kind, authoritative))
+
+    for path in sorted(root.rglob("AGENTS.md")):
+        if not any(part in SOURCE_EXCLUDED_PARTS for part in path.relative_to(root).parts):
+            add(path, "AGENTS.md")
+
+    standards_directory = root / "docs" / "开发规范"
+    if standards_directory.is_dir():
+        for path in sorted(standards_directory.rglob("*")):
+            if path.is_file():
+                add(path, "项目开发规范")
+
+    for name in (
+        ".dev-env.yaml",
+        ".editorconfig",
+        "pom.xml",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "pnpm-lock.yaml",
+        "package-lock.json",
+        "yarn.lock",
+        "tsconfig.json",
+    ):
+        add(root / name, ".dev-env.yaml" if name == ".dev-env.yaml" else "项目配置")
+
     candidate_patterns = (
         "eslint.config.*",
         ".eslintrc*",
         "prettier.config.*",
         ".prettierrc*",
+        ".prettierignore",
+        ".eslintignore",
+        "tsconfig.*.json",
+        "vite.config.*",
+        "vitest.config.*",
+        "jest.config.*",
+        "stylelint.config.*",
+        ".stylelintrc*",
         "*checkstyle*",
+        "*pmd*",
+        "*spotless*",
     )
     for pattern in candidate_patterns:
         for path in sorted(root.glob(pattern)):
-            if path.is_file() and not any(item["path"] == _relative_display(path, root) for item in sources):
-                sources.append(_source(path, root, "质量工具配置"))
+            add(path, "质量工具配置")
+
+    workflows_directory = root / ".github" / "workflows"
+    if workflows_directory.is_dir():
+        for path in sorted(workflows_directory.rglob("*")):
+            if path.is_file():
+                add(path, "CI 配置")
     return sources
 
 
@@ -242,7 +475,99 @@ def _command(command_id: str, kind: str, argv: Sequence[str], scope: str, source
     }
 
 
-def discover(root: Path, stack: str) -> Dict[str, Any]:
+def _package_has_dependency(package: Dict[str, Any], dependency: str) -> bool:
+    for section_name in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"):
+        section = package.get(section_name, {})
+        if isinstance(section, dict) and dependency in section:
+            return True
+    return False
+
+
+def _has_root_pattern(root: Path, patterns: Sequence[str]) -> bool:
+    return any(path.is_file() for pattern in patterns for path in root.glob(pattern))
+
+
+def _fixer(
+    fixer_id: str,
+    tool: str,
+    available: bool,
+    runner: Sequence[str],
+    extensions: Set[str],
+    source: str,
+) -> Dict[str, Any]:
+    return {
+        "id": fixer_id,
+        "tool": tool,
+        "kind": "pnpm",
+        "runner": list(runner),
+        "extensions": sorted(extensions),
+        "scope": "changed-files",
+        "source": source,
+        "available": available,
+    }
+
+
+def _discover_vue_fixers(
+    root: Path,
+    package: Dict[str, Any],
+    command_pnpm: str,
+    pnpm_available: bool,
+) -> List[Dict[str, Any]]:
+    fixers: List[Dict[str, Any]] = []
+    if (
+        _has_root_pattern(root, ("prettier.config.*", ".prettierrc*"))
+        or _package_has_dependency(package, "prettier")
+    ):
+        fixers.append(
+            _fixer(
+                "prettier-fix",
+                "prettier",
+                pnpm_available,
+                [command_pnpm, "--offline", "exec", "prettier", "--write", "--"],
+                PRETTIER_EXTENSIONS,
+                "Prettier 配置或依赖",
+            )
+        )
+    if (
+        _has_root_pattern(root, ("eslint.config.*", ".eslintrc*"))
+        or _package_has_dependency(package, "eslint")
+    ):
+        fixers.append(
+            _fixer(
+                "eslint-fix",
+                "eslint",
+                pnpm_available,
+                [command_pnpm, "--offline", "exec", "eslint", "--fix", "--"],
+                ESLINT_EXTENSIONS,
+                "ESLint 配置或依赖",
+            )
+        )
+    return fixers
+
+
+def _fix_commands(fixers: Sequence[Dict[str, Any]], changed_files: Sequence[str]) -> List[Dict[str, Any]]:
+    commands: List[Dict[str, Any]] = []
+    for fixer in fixers:
+        extensions = set(fixer.get("extensions", []))
+        target_files = [
+            path for path in changed_files
+            if Path(path).suffix.lower() in extensions
+        ]
+        if not target_files:
+            continue
+        commands.append({
+            "id": fixer["id"],
+            "kind": fixer["kind"],
+            "argv": list(fixer["runner"]) + target_files,
+            "command": " ".join(str(item) for item in list(fixer["runner"]) + target_files),
+            "scope": fixer["scope"],
+            "source": fixer["source"],
+            "tool": fixer["tool"],
+        })
+    return commands
+
+
+def discover(root: Path, stack: str, user_rules_file: Optional[Path] = None) -> Dict[str, Any]:
     root = root.resolve()
     if not root.is_dir():
         raise ToolError(f"项目根目录不存在：{root}")
@@ -257,6 +582,7 @@ def discover(root: Path, stack: str) -> Dict[str, Any]:
         warnings.append("缺少 docs/开发规范/README.md，将沿用项目现有规则")
     commands: List[Dict[str, Any]] = []
     tools: List[Dict[str, Any]] = []
+    fixers: List[Dict[str, Any]] = []
 
     if stack == "springboot":
         pom_path = root / "pom.xml"
@@ -340,12 +666,14 @@ def discover(root: Path, stack: str) -> Dict[str, Any]:
                         f"package.json:scripts.{script_name}",
                     )
                 )
+            fixers.extend(_discover_vue_fixers(root, package, command_pnpm, bool(pnpm)))
             tools.append({
                 "id": "pnpm",
                 "available": bool(pnpm),
                 "commands": [item["id"] for item in commands if item["kind"] == "pnpm"],
             })
 
+    fingerprint = _compute_fingerprint(root, stack, sources, commands, user_rules_file)
     status = "pass-with-warning" if warnings else "passed"
     return {
         "schema_version": SCHEMA_VERSION,
@@ -356,6 +684,8 @@ def discover(root: Path, stack: str) -> Dict[str, Any]:
         "sources": sources,
         "tools": tools,
         "commands": commands,
+        "fixers": fixers,
+        "fingerprint": fingerprint,
         "warnings": warnings,
     }
 
@@ -599,17 +929,21 @@ def check(
     changed_from_git: bool = False,
     full: bool = False,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+    user_rules_file: Optional[Path] = None,
+    baseline_fingerprint: Optional[Path] = None,
+    fix: bool = False,
 ) -> Dict[str, Any]:
     root = root.resolve()
-    discovery = discover(root, stack)
+    discovery = discover(root, stack, user_rules_file=user_rules_file)
     dev_env, _ = _load_dev_env(root)
     files = list(changed_files or [])
-    warnings = list(discovery.get("warnings", []))
+    warnings: List[str] = []
     if changed_from_git:
         git_files, git_warnings = git_changed_files(root)
         files.extend(git_files)
         warnings.extend(git_warnings)
-    checks = _check_changed_files(root, files) if files else [{
+    files = sorted(set(files))
+    file_checks = _check_changed_files(root, files) if files else [{
         "id": "changed-files",
         "status": "warning",
         "source": "Git",
@@ -618,7 +952,86 @@ def check(
         "exit_code": None,
         "evidence": "未提供变更文件，跳过变更文件级检查",
     }]
+    checks = list(file_checks)
+
+    fixes: List[Dict[str, Any]] = []
+    if fix:
+        if not files:
+            fixes.append({
+                "id": "fix-scope",
+                "status": "blocked",
+                "source": "自动纠正安全边界",
+                "scope": "变更文件",
+                "command": "",
+                "exit_code": None,
+                "evidence": "--fix 必须提供明确的变更文件，禁止对整个项目执行自动纠正",
+            })
+        elif any(item.get("status") == "blocked" for item in file_checks):
+            fixes.append({
+                "id": "fix-scope",
+                "status": "blocked",
+                "source": "自动纠正安全边界",
+                "scope": "变更文件",
+                "command": "",
+                "exit_code": None,
+                "evidence": "存在无法读取或不存在的变更文件，跳过自动纠正",
+            })
+        else:
+            fix_commands = _fix_commands(discovery.get("fixers", []), files)
+            if not discovery.get("fixers", []):
+                fixes.append({
+                    "id": "fix-tools",
+                    "status": "warning",
+                    "source": "项目质量工具",
+                    "scope": "自动纠正",
+                    "command": "",
+                    "exit_code": None,
+                    "evidence": "未发现可安全限定到变更文件的自动纠正工具",
+                })
+            elif not fix_commands:
+                fixes.append({
+                    "id": "fix-files",
+                    "status": "warning",
+                    "source": "自动纠正安全边界",
+                    "scope": "变更文件",
+                    "command": "",
+                    "exit_code": None,
+                    "evidence": "变更文件没有匹配已知自动纠正工具的文件类型",
+                })
+            else:
+                fixer_index = {item["id"]: item for item in discovery.get("fixers", [])}
+                for command in fix_commands:
+                    fixer = fixer_index.get(command["id"], {})
+                    if not fixer.get("available"):
+                        fixes.append({
+                            "id": command["id"],
+                            "status": "blocked",
+                            "source": command["source"],
+                            "scope": command["scope"],
+                            "command": command["command"],
+                            "exit_code": None,
+                            "evidence": "自动纠正工具不可用，未执行修复",
+                        })
+                    else:
+                        fixes.append(_execute_command_check(root, command, dev_env, timeout_seconds))
+                discovery = discover(root, stack, user_rules_file=user_rules_file)
+
+    warnings.extend(discovery.get("warnings", []))
     checks.extend(_check_git_diff(root))
+
+    baseline = _load_fingerprint(baseline_fingerprint) if baseline_fingerprint else None
+    fingerprint_comparison = _compare_fingerprints(baseline, discovery["fingerprint"])
+    if fingerprint_comparison["available"] and fingerprint_comparison["changed"]:
+        checks.append({
+            "id": "standards-fingerprint",
+            "status": "warning",
+            "source": "规范指纹",
+            "scope": "当前运行规范来源",
+            "command": "standards_tool.py fingerprint",
+            "exit_code": 0,
+            "evidence": "规范来源已变化，已使用最新来源重新发现；变化项："
+            + ", ".join(item["path"] for item in fingerprint_comparison["changed_inputs"]),
+        })
 
     commands = discovery.get("commands", [])
     executable_tool_ids = {tool["id"] for tool in discovery.get("tools", []) if tool.get("available")}
@@ -662,17 +1075,23 @@ def check(
         "exit_code": None,
         "evidence": warning,
     } for warning in warnings)
+    checks.extend(fixes)
     return {
         "schema_version": SCHEMA_VERSION,
         "mode": "check",
         "root": str(root),
         "stack": stack,
         "full": full,
-        "changed_files": sorted(set(files)),
+        "fix": fix,
+        "changed_files": files,
         "status": _aggregate_status(checks),
         "sources": discovery.get("sources", []),
         "tools": discovery.get("tools", []),
         "commands": commands,
+        "fixers": discovery.get("fixers", []),
+        "fingerprint": discovery.get("fingerprint"),
+        "fingerprint_comparison": fingerprint_comparison,
+        "fixes": fixes,
         "checks": checks,
         "warnings": warnings,
     }
@@ -684,16 +1103,26 @@ def _escape_markdown(value: Any) -> str:
 
 
 def _render_markdown(result: Dict[str, Any]) -> str:
+    mode = result.get("mode")
     lines = [
-        "# 开发规范检查报告" if result.get("mode") == "check" else "# 开发规范来源报告",
+        "# 开发规范检查报告" if mode == "check" else "# 开发规范指纹报告" if mode == "fingerprint" else "# 开发规范来源报告",
         "",
         f"- 结论：`{result.get('status', '')}`",
         f"- 技术栈：`{result.get('stack', '')}`",
         f"- 项目根目录：`{result.get('root', '')}`",
     ]
-    if result.get("mode") == "check":
+    fingerprint = result.get("fingerprint")
+    if mode == "fingerprint" and isinstance(result.get("value"), str):
+        fingerprint = result
+    if isinstance(fingerprint, dict):
+        lines.append(f"- 规范 Hash：`{_escape_markdown(fingerprint.get('value'))}`")
+    if mode == "check":
         lines.append(f"- 全量检查：`{'是' if result.get('full') else '否'}`")
         lines.append(f"- 变更文件数：`{len(result.get('changed_files', []))}`")
+        comparison = result.get("fingerprint_comparison", {})
+        if comparison.get("available"):
+            lines.append(f"- 基线 Hash：`{_escape_markdown(comparison.get('baseline'))}`")
+            lines.append(f"- 规范是否变化：`{'是' if comparison.get('changed') else '否'}`")
     lines.extend(["", "## 规则来源", "", "| 路径 | 类型 | 权威 |", "| --- | --- | --- |"])
     for source in result.get("sources", []):
         lines.append(
@@ -706,7 +1135,7 @@ def _render_markdown(result: Dict[str, Any]) -> str:
             f"| `{_escape_markdown(tool.get('id'))}` | {('是' if tool.get('available') else '否')} | "
             f"{_escape_markdown(', '.join(tool.get('commands', [])))} |"
         )
-    if result.get("mode") == "check":
+    if mode == "check":
         lines.extend(["", "## 检查结果", "", "| 状态 | 检查 | 范围 | 来源 | 退出码 |", "| --- | --- | --- | --- | --- |"])
         for item in result.get("checks", []):
             lines.append(
@@ -722,6 +1151,22 @@ def _render_markdown(result: Dict[str, Any]) -> str:
             lines.append(f"- 命令：`{_escape_markdown(item.get('command'))}`")
             lines.append(f"- 证据：{_escape_markdown(evidence)}")
             lines.append("")
+        if result.get("fixes"):
+            lines.extend(["## 自动纠正", "", "| 状态 | 工具 | 退出码 |", "| --- | --- | --- |"])
+            for item in result["fixes"]:
+                lines.append(
+                    f"| `{_escape_markdown(item.get('status'))}` | `{_escape_markdown(item.get('id'))}` | "
+                    f"{_escape_markdown(item.get('exit_code'))} |"
+                )
+                lines.append(f"- `{_escape_markdown(item.get('command'))}`：{_escape_markdown(item.get('evidence'))}")
+            lines.append("")
+    if mode == "fingerprint" and isinstance(fingerprint, dict):
+        lines.extend(["", "## 指纹输入", "", "| 路径 | 类型 | SHA-256 |", "| --- | --- | --- |"])
+        for item in fingerprint.get("inputs", []):
+            lines.append(
+                f"| `{_escape_markdown(item.get('path'))}` | {_escape_markdown(item.get('kind'))} | "
+                f"`{_escape_markdown(item.get('sha256'))}` |"
+            )
     if result.get("warnings"):
         lines.extend(["## 告警和未执行项", ""])
         lines.extend(f"- {warning}" for warning in result["warnings"])
@@ -746,16 +1191,19 @@ def _configure_utf8_output() -> None:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="发现并执行项目已有开发规范检查工具")
     subparsers = parser.add_subparsers(dest="operation", required=True)
-    for operation in ("discover", "check"):
+    for operation in ("discover", "fingerprint", "check"):
         subparser = subparsers.add_parser(operation)
         subparser.add_argument("--root", default=".", help="项目根目录，默认当前目录")
         subparser.add_argument("--stack", required=True, choices=sorted(SUPPORTED_STACKS))
         subparser.add_argument("--format", dest="output_format", choices=("markdown", "json"), default="markdown")
+        subparser.add_argument("--user-rules-file", help="当前任务用户规则文件，按 UTF-8 读取并纳入规范指纹")
         if operation == "check":
             subparser.add_argument("--changed-from-git", action="store_true")
             subparser.add_argument("--changed-file", action="append", default=[])
             subparser.add_argument("--full", action="store_true")
             subparser.add_argument("--timeout-seconds", type=int, default=DEFAULT_TIMEOUT_SECONDS)
+            subparser.add_argument("--baseline-fingerprint", help="当前运行的基线规范指纹 JSON")
+            subparser.add_argument("--fix", action="store_true", help="显式执行受限的自动纠正")
     return parser
 
 
@@ -765,8 +1213,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
     try:
         root = Path(args.root)
+        user_rules_file = Path(args.user_rules_file) if args.user_rules_file else None
         if args.operation == "discover":
-            result = discover(root, args.stack)
+            result = discover(root, args.stack, user_rules_file=user_rules_file)
+            exit_code = 0
+        elif args.operation == "fingerprint":
+            discovery = discover(root, args.stack, user_rules_file=user_rules_file)
+            result = {
+                "schema_version": SCHEMA_VERSION,
+                "mode": "fingerprint",
+                "root": discovery["root"],
+                "stack": discovery["stack"],
+                "status": discovery["status"],
+                **discovery["fingerprint"],
+                "sources": discovery["sources"],
+                "warnings": discovery["warnings"],
+            }
             exit_code = 0
         else:
             if args.timeout_seconds <= 0:
@@ -778,6 +1240,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 changed_from_git=args.changed_from_git,
                 full=args.full,
                 timeout_seconds=args.timeout_seconds,
+                user_rules_file=user_rules_file,
+                baseline_fingerprint=Path(args.baseline_fingerprint) if args.baseline_fingerprint else None,
+                fix=args.fix,
             )
             exit_code = 2 if result["status"] == "blocked" else 0
         _emit(result, args.output_format)
