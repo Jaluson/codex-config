@@ -98,4 +98,5 @@ python -X utf8 .codex/skills/development-standards/scripts/standards_tool.py che
 
 | 修订 | 日期 | 内容 |
 | --- | --- | --- |
+| R2 | 2026-08-04 | 明确 Codex 主代理决策与 `explorer`/`worker` 原子子代理的协作边界。 |
 | R1 | 2026-08-03 | 建立 Spring Boot + Vue 3 全栈开发规范、质量门禁和交付模板体系 |
