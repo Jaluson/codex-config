@@ -1,7 +1,0 @@
-[agents.explorer]
-config_file = "agents/explorer.toml"
-description = "Read-only repository explorer"
-
-[agents.worker]
-config_file = "agents/worker.toml"
-description = "Code implementation agent"
