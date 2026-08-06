@@ -138,6 +138,18 @@ def _source(path: Path, root: Path, kind: str, authoritative: bool = True) -> Di
     }
 
 
+def _standards_layer(path: Path, standards_directory: Path) -> str:
+    """返回开发规范的分层，供发现报告明确适用范围。"""
+    relative_parts = path.relative_to(standards_directory).parts
+    if not relative_parts:
+        return "入口"
+    if relative_parts == ("README.md",):
+        return "入口"
+    if relative_parts[0] in {"基础", "专项", "模板"}:
+        return relative_parts[0]
+    return "未分层"
+
+
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -399,7 +411,10 @@ def _detect_sources(root: Path) -> List[Dict[str, Any]]:
         if relative_path in seen:
             return
         seen.add(relative_path)
-        sources.append(_source(path, root, kind, authoritative))
+        source = _source(path, root, kind, authoritative)
+        if kind == "项目开发规范":
+            source["layer"] = _standards_layer(path, root / "docs" / "开发规范")
+        sources.append(source)
 
     for path in sorted(root.rglob("AGENTS.md")):
         if not any(part in SOURCE_EXCLUDED_PARTS for part in path.relative_to(root).parts):
@@ -580,6 +595,17 @@ def discover(root: Path, stack: str, user_rules_file: Optional[Path] = None) -> 
     standards_path = root / "docs" / "开发规范" / "README.md"
     if not standards_path.is_file():
         warnings.append("缺少 docs/开发规范/README.md，将沿用项目现有规则")
+    standards_directory = root / "docs" / "开发规范"
+    if standards_directory.is_dir():
+        unlayered = [
+            _relative_display(path, root)
+            for path in standards_directory.iterdir()
+            if path.is_file() and path.name != "README.md"
+        ]
+        if unlayered:
+            warnings.append(
+                "docs/开发规范 存在未归入基础/专项/模板的平铺正文：" + ", ".join(sorted(unlayered))
+            )
     commands: List[Dict[str, Any]] = []
     tools: List[Dict[str, Any]] = []
     fixers: List[Dict[str, Any]] = []

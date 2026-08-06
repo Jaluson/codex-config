@@ -15,6 +15,8 @@ description: 维护项目对外 HTTP/Web API 的唯一最新接口文档，并�
 - 文档必须描述当前真实契约；历史差异写入同一文件的“修订记录”，不得创建日期版、版本版、备份版或副本文件。
 - 直接调用本 Skill 时执行完整流程；由 `$orchestrator` 调用时只执行 Registry 指定的 `inspect`、`update` 或 `verify` 阶段，并使用当前 run 的 Artifact 交接。
 
+设计与实现时遵守[通用设计与实现方向](../通用设计与实现方向.md)。
+
 ## 工作流程
 
 ### 1. 识别接口变更和文档 (`inspect`)

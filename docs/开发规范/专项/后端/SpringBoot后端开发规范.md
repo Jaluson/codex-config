@@ -2,7 +2,7 @@
 
 ## 1. 适用范围和版本
 
-本规范适用于 Java + Spring Boot + Maven 服务。目标项目的 Java、Spring Boot、Maven、数据库驱动和中间件版本以项目配置和 `.dev-env.yaml` 为准；当前技能覆盖 JDK 8–25，当前配置默认使用 JDK 25 和 Maven 3.9.15。
+本规范适用于 Java + Spring Boot + Maven 服务。目标项目的 Java、Spring Boot、Maven、数据库驱动和中间件版本以项目配置和 `.dev-env.yaml` 为准；当前技能覆盖 JDK 8–25。执行命令前确认配置路径存在，并以实际 `java -version` 和 `mvn -version` 输出为准。
 
 不得因为本文档存在就直接升级 JDK、Spring Boot、插件或依赖。升级必须作为独立的兼容性变更，记录目标版本、废弃 API、运行时差异、迁移步骤和回滚方式。
 
